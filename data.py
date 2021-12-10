@@ -14,6 +14,7 @@ def randomHueSaturationValue(image, hue_shift_limit=(-180, 180),
                              sat_shift_limit=(-255, 255),
                              val_shift_limit=(-255, 255), u=0.5):
     if np.random.random() < u:
+        print("HueSaturationValue")
         image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         h, s, v = cv2.split(image)
         hue_shift = np.random.randint(hue_shift_limit[0], hue_shift_limit[1]+1)
@@ -37,6 +38,7 @@ def randomShiftScaleRotate(image, mask,
                            aspect_limit=(-0.0, 0.0),
                            borderMode=cv2.BORDER_CONSTANT, u=0.5):
     if np.random.random() < u:
+        print("ShiftScaleRotate")
         height, width, channel = image.shape
 
         angle = np.random.uniform(rotate_limit[0], rotate_limit[1])
@@ -73,6 +75,7 @@ def randomShiftScaleRotate(image, mask,
 
 def randomHorizontalFlip(image, mask, u=0.5):
     if np.random.random() < u:
+        print("HorizontalFlip")
         image = cv2.flip(image, 1)
         mask = cv2.flip(mask, 1)
 
@@ -81,6 +84,7 @@ def randomHorizontalFlip(image, mask, u=0.5):
 
 def randomVerticleFlip(image, mask, u=0.5):
     if np.random.random() < u:
+        print("VerticleFlip")
         image = cv2.flip(image, 0)
         mask = cv2.flip(mask, 0)
 
@@ -89,6 +93,7 @@ def randomVerticleFlip(image, mask, u=0.5):
 
 def randomRotate90(image, mask, u=0.5):
     if np.random.random() < u:
+        print("Rotate90")
         image = np.rot90(image)
         mask = np.rot90(mask)
 
