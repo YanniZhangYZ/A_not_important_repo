@@ -182,11 +182,13 @@ if __name__ == '__main__':
     train_root = 'dataset/train/'
     image_root = os.path.join(train_root, 'images')
     gt_root = os.path.join(train_root, 'groundtruth')
-    image_list = os.listdir(image_root).sort()
-    gt_list = os.listdir(gt_root).sort()
+    image_list = sorted(
+        [f for f in os.listdir(image_root) if f.endswith('.png')])
+    gt_list = sorted(
+        [f for f in os.listdir(gt_root) if f.endswith('.png')])
     # imagelist = filter(lambda x: x.find('sat') != -1, os.listdir(train_root))
 
-    train_split = len(image_list) * 0.8
+    train_split = len(image_list)
     trainlist = image_list[:train_split]
 
     # val_root = 'D:/complete_project/Dinknet/road512/val/'
