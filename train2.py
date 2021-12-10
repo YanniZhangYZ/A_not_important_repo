@@ -177,8 +177,13 @@ import torch.nn.functional as F
 
 
 if __name__ == '__main__':
-    # warnings.filterwarnings("ignore")
+
+    # the network need the size to be a multiple of 32, resize is intriduced
+    ORIG_SHAPE = (400, 400)
     SHAPE = (512, 512)
+    NAME = 'dinknet3'
+    BATCHSIZE_PER_CARD = 16  # 每个显卡给batchsize给8
+
     train_root = 'dataset/train/'
     image_root = os.path.join(train_root, 'images')
     gt_root = os.path.join(train_root, 'groundtruth')
@@ -196,9 +201,6 @@ if __name__ == '__main__':
     # vallist = map(lambda x: x[:-8], imagelist)
     # vallist = list(vallist)
 
-    NAME = 'dinknet3'
-    BATCHSIZE_PER_CARD = 16  # 每个显卡给batchsize给8
-
     solver = MyFrame(DinkNet34, dice_bce_loss, 1e-3)
     # solver.load('./weights/test.th')
 
@@ -206,7 +208,7 @@ if __name__ == '__main__':
     # val_batchsize = torch.cuda.device_count() * BATCHSIZE_PER_CARD * 2
 
     #  data preprocessing here
-    train_dataset = ImageFolder(trainlist, image_root, gt_root)
+    train_dataset = ImageFolder(trainlist, image_root, gt_root, SHAPE)
     # val_dataset = ImageFolder(vallist, val_root)
     print("train_dataset", train_dataset)
 
@@ -217,88 +219,88 @@ if __name__ == '__main__':
         num_workers=0)
     print("data loader", data_loader)
 
-    # # val_data_loader = torch.utils.data.DataLoader(
-    # #     val_dataset,
-    # #     batch_size=val_batchsize,
-    # #     shuffle=True,
-    # #     num_workers=0)
+    # val_data_loader = torch.utils.data.DataLoader(
+    #     val_dataset,
+    #     batch_size=val_batchsize,
+    #     shuffle=True,
+    #     num_workers=0)
 
-    # mylog = open('logs/'+NAME+'.log', 'w')
-    # tic = time()
-    # device = torch.device('cuda:0')
-    # no_optim = 0
-    # total_epoch = 100
-    # train_epoch_best_loss = 100.
+    mylog = open('logs/'+NAME+'.log', 'w')
+    tic = time()
+    device = torch.device('cuda:0')
+    no_optim = 0
+    total_epoch = 100
+    train_epoch_best_loss = 100.
 
-    # # test_loss = 0
-    # # criteon = nn.CrossEntropyLoss().to(device)
-    # # criteon = DiceLoss()
-    # # iou_criteon = SoftIoULoss(2)
-    # # scheduler = solver.lr_strategy()  这个学习率调整策略是我加的，还没用，只用了原始的，感兴趣的可以试试
+    # test_loss = 0
+    # criteon = nn.CrossEntropyLoss().to(device)
+    # criteon = DiceLoss()
+    # iou_criteon = SoftIoULoss(2)
+    # scheduler = solver.lr_strategy()  这个学习率调整策略是我加的，还没用，只用了原始的，感兴趣的可以试试
 
-    # for epoch in range(1, total_epoch + 1):
-    #     print('---------- Epoch:'+str(epoch) + ' ----------')
-    #     # scheduler.step() 对应上面的学习率策略，须同时打开
-    #     # print('lr={:.6f}'.format(scheduler.get_lr()[0])) 输出上面的学习率策略，须同时打开
-    #     data_loader_iter = iter(data_loader)
-    #     train_epoch_loss = 0
-    #     print('Train:')
-    #     # for img, mask in tqdm(data_loader_iter, ncols=20, total=len(data_loader_iter)):
-    #     for img, mask in data_loader_iter:
-    #         solver.set_input(img, mask)
-    #         train_loss = solver.optimize()
-    #         train_epoch_loss += train_loss
-    #     train_epoch_loss /= len(data_loader_iter)
+    for epoch in range(1, total_epoch + 1):
+        print('---------- Epoch:'+str(epoch) + ' ----------')
+        # scheduler.step() 对应上面的学习率策略，须同时打开
+        # print('lr={:.6f}'.format(scheduler.get_lr()[0])) 输出上面的学习率策略，须同时打开
+        data_loader_iter = iter(data_loader)
+        train_epoch_loss = 0
+        print('Train:')
+        # for img, mask in tqdm(data_loader_iter, ncols=20, total=len(data_loader_iter)):
+        for img, mask in data_loader_iter:
+            solver.set_input(img, mask)
+            train_loss = solver.optimize()
+            train_epoch_loss += train_loss
+        train_epoch_loss /= len(data_loader_iter)
 
-    #     # val_data_loader_num = iter(val_data_loader)
-    #     # test_epoch_loss = 0
-    #     # test_mean_iou = 0
-    #     # val_pre_list = []
-    #     # val_mask_list = []
-    #     # print('Validation:')
-    #     # for val_img, val_mask in tqdm(val_data_loader_num, ncols=20, total=len(val_data_loader_num)):
-    #     #     val_img, val_mask = val_img.to(device), val_mask.cuda().cpu()
-    #     #     val_mask[np.where(val_mask > 0)] = 1
-    #     #     val_mask = val_mask.squeeze(0)
-    #     #     predict = solver.test_one_img(val_img)
-    #     #     predict_temp = torch.from_numpy(predict).unsqueeze(0)
-    #     #     predict_use = V(predict_temp.type(
-    #     #         torch.FloatTensor), volatile=True)
-    #     #     val_use = V(val_mask.type(torch.FloatTensor), volatile=True)
-    #     #     test_epoch_loss += criteon.forward(predict_use, val_use)
-    #     #     predict_use = predict_use.squeeze(0)
-    #     #     predict_use = predict_use.unsqueeze(1)
-    #     #     predict_use[predict_use >= 0.5] = 1
-    #     #     predict_use[predict_use < 0.5] = 0
-    #     #     predict_use = predict_use.type(torch.LongTensor)
-    #     #     val_use = val_use.squeeze(1).type(torch.LongTensor)
-    #     #     test_mean_iou += iou_pytorch(predict_use, val_use)
+        # val_data_loader_num = iter(val_data_loader)
+        # test_epoch_loss = 0
+        # test_mean_iou = 0
+        # val_pre_list = []
+        # val_mask_list = []
+        # print('Validation:')
+        # for val_img, val_mask in tqdm(val_data_loader_num, ncols=20, total=len(val_data_loader_num)):
+        #     val_img, val_mask = val_img.to(device), val_mask.cuda().cpu()
+        #     val_mask[np.where(val_mask > 0)] = 1
+        #     val_mask = val_mask.squeeze(0)
+        #     predict = solver.test_one_img(val_img)
+        #     predict_temp = torch.from_numpy(predict).unsqueeze(0)
+        #     predict_use = V(predict_temp.type(
+        #         torch.FloatTensor), volatile=True)
+        #     val_use = V(val_mask.type(torch.FloatTensor), volatile=True)
+        #     test_epoch_loss += criteon.forward(predict_use, val_use)
+        #     predict_use = predict_use.squeeze(0)
+        #     predict_use = predict_use.unsqueeze(1)
+        #     predict_use[predict_use >= 0.5] = 1
+        #     predict_use[predict_use < 0.5] = 0
+        #     predict_use = predict_use.type(torch.LongTensor)
+        #     val_use = val_use.squeeze(1).type(torch.LongTensor)
+        #     test_mean_iou += iou_pytorch(predict_use, val_use)
 
-    #     # batch_iou = test_mean_iou / len(val_data_loader_num)
-    #     # val_loss = test_epoch_loss / len(val_data_loader_num)
+        # batch_iou = test_mean_iou / len(val_data_loader_num)
+        # val_loss = test_epoch_loss / len(val_data_loader_num)
 
-    #     mylog.write('********************' + '\n')
-    #     mylog.write('--epoch:' + str(epoch) + '  --time:' + str(int(time()-tic)) + '  --train_loss:' + str(
-    #         train_epoch_loss.item()) + '--SHAPE:' + str(SHAPE) + '\n')
-    #     print('--epoch:', epoch, '  --time:', int(time()-tic), '  --train_loss:',
-    #           train_epoch_loss.item(), '--SHAPE:', str(SHAPE))
-    #     if train_epoch_loss >= train_epoch_best_loss:
-    #         no_optim += 1
-    #     else:
-    #         no_optim = 0
-    #         train_epoch_best_loss = train_epoch_loss
-    #         solver.save('weights/'+NAME+'.th')
-    #     if no_optim > 6:
-    #         print(mylog, 'early stop at %d epoch' % epoch)
-    #         print('early stop at %d epoch' % epoch)
-    #         break
-    #     if no_optim > 3:
-    #         if solver.old_lr < 5e-7:
-    #             break
-    #         solver.load('weights/'+NAME+'.th')
-    #         solver.update_lr(5.0, factor=True, mylog=mylog)
-    #     mylog.flush()
+        mylog.write('********************' + '\n')
+        mylog.write('--epoch:' + str(epoch) + '  --time:' + str(int(time()-tic)) + '  --train_loss:' + str(
+            train_epoch_loss.item()) + '--SHAPE:' + str(SHAPE) + '\n')
+        print('--epoch:', epoch, '  --time:', int(time()-tic), '  --train_loss:',
+              train_epoch_loss.item(), '--SHAPE:', str(SHAPE))
+        if train_epoch_loss >= train_epoch_best_loss:
+            no_optim += 1
+        else:
+            no_optim = 0
+            train_epoch_best_loss = train_epoch_loss
+            solver.save('weights/'+NAME+'.th')
+        if no_optim > 6:
+            print(mylog, 'early stop at %d epoch' % epoch)
+            print('early stop at %d epoch' % epoch)
+            break
+        if no_optim > 3:
+            if solver.old_lr < 5e-7:
+                break
+            solver.load('weights/'+NAME+'.th')
+            solver.update_lr(5.0, factor=True, mylog=mylog)
+        mylog.flush()
 
-    # print(mylog, 'Finish!')
-    # print('Finish!')
-    # mylog.close()
+    print(mylog, 'Finish!')
+    print('Finish!')
+    mylog.close()

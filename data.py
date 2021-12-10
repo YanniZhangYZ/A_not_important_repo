@@ -95,9 +95,13 @@ def randomRotate90(image, mask, u=0.5):
     return image, mask
 
 
-def default_loader(filename, image_root, gt_root):
+def default_loader(filename, image_root, gt_root, resize_shape):
     img = cv2.imread(os.path.join(image_root, filename))
     mask = cv2.imread(os.path.join(gt_root, filename), cv2.IMREAD_GRAYSCALE)
+
+    # the network need the size to be a multiple of 32, resize is intriduced
+    img = cv2.resize(img, resize_shape)
+    mask = cv2.resize(mask, resize_shape)
 
     img = randomHueSaturationValue(img,
                                    hue_shift_limit=(-30, 30),
@@ -105,9 +109,9 @@ def default_loader(filename, image_root, gt_root):
                                    val_shift_limit=(-15, 15))
 
     img, mask = randomShiftScaleRotate(img, mask,
-                                       shift_limit=(-0.1, 0.1),
-                                       scale_limit=(-0.1, 0.1),
-                                       aspect_limit=(-0.1, 0.1),
+                                       shift_limit=(-0.5, 0.5),
+                                       scale_limit=(-0.5, 0.5),
+                                       aspect_limit=(-0.5, 0.5),
                                        rotate_limit=(-0, 0))
     img, mask = randomHorizontalFlip(img, mask)
     img, mask = randomVerticleFlip(img, mask)
@@ -124,15 +128,17 @@ def default_loader(filename, image_root, gt_root):
 
 class ImageFolder(data.Dataset):
 
-    def __init__(self, trainlist, image_root, gt_root):
+    def __init__(self, trainlist, image_root, gt_root, resize_shape):
         self.ids = trainlist
         self.loader = default_loader
         self.image_root = image_root
         self.gt_root = gt_root
+        self.resize_shape = resize_shape
 
     def __getitem__(self, index):
         filename = self.ids[index]
-        img, mask = self.loader(filename, self.image_root, self.gt_root)
+        img, mask = self.loader(filename, self.image_root,
+                                self.gt_root, self.resize_shape)
         img = torch.Tensor(img)
         mask = torch.Tensor(mask)
         return img, mask
