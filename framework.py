@@ -79,7 +79,7 @@ class MyFrame():
         if not eval:
             loss.backward()
             self.optimizer.step()
-        return loss
+        return loss.item()
 
     def save(self, path):
         torch.save(self.net.state_dict(), path)

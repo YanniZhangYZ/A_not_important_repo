@@ -16,7 +16,7 @@ from networks.dunet import Dunet
 from networks.dinknet import LinkNet34, DinkNet34, DinkNet50, DinkNet101, DinkNet34_less_pool
 
 
-BATCHSIZE_PER_CARD = 16
+BATCHSIZE_PER_CARD = 8
 
 
 class TTAFrame():
@@ -174,11 +174,11 @@ if __name__ == '__main__':
     # img_names.append(folder+'.png')
     # img_names.append(os.listdir(test_file_path))
     # val = os.listdir(source)
-    solver = TTAFrame(DinkNet34)
+    solver = TTAFrame(DinkNet101)
     # solver = TTAFrame(LinkNet34)
-    solver.load('weights/dinknet34.th')
+    solver.load('weights/dinknet101.th')
     tic = time()
-    target = 'submits/dink34/'
+    target = 'submits/dink101/'
     os.mkdir(target)
     for i, name in enumerate(img_names):
         if i % 10 == 0:

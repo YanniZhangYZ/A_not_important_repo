@@ -26,165 +26,13 @@ import torch.nn.functional as F
 from test import TTAFrame
 
 
-# def iou(img_true, img_pred):
-#     img_pred = (img_pred > 0).float()
-#     i = (img_true * img_pred).sum()
-#     u = (img_true + img_pred).sum()
-#     return i / u if u != 0 else u
-
-
-# def iou_metric(imgs_pred, imgs_true):
-#     num_images = len(imgs_true)
-#     scores = np.zeros(num_images)
-#     for i in range(num_images):
-#         if imgs_true[i].sum() == imgs_pred[i].sum() == 0:
-#             scores[i] = 1
-#         else:
-#             # iou_thresholds = np.array([0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95])
-#             # scores[i] = (iou_thresholds <= iou(imgs_true[i], imgs_pred[i])).mean()
-#             scores[i] = iou(imgs_true[i], imgs_pred[i])
-#     return scores.mean()
-
-
-# def get_one_hot(label, N):
-#     size = list(label.size())
-#     label = label.view(-1)
-#     ones = torch.sparse.torch.eye(N)
-#     ones = ones.index_select(0, label)
-#     size.append(N)
-#     return ones.view(*size)
-
-
-# class DiceLoss(nn.Module):
-#     def __init__(self):
-#         super(DiceLoss, self).__init__()
-
-#     def forward(self, input, target):
-#         N = target.size(0)
-#         smooth = 1
-
-#         input_flat = input.view(N, -1)
-#         target_flat = target.view(N, -1)
-
-#         intersection = input_flat * target_flat
-
-#         loss = 2 * (intersection.sum(1) + smooth) / \
-#             (input_flat.sum(1) + target_flat.sum(1) + smooth)
-#         loss = 1 - loss.sum() / N
-
-#         return loss
-
-
-# class MulticlassDiceLoss(nn.Module):
-#     """
-#     requires one hot encoded target. Applies DiceLoss on each class iteratively.
-#     requires input.shape[0:1] and target.shape[0:1] to be (N, C) where N is
-#       batch size and C is number of classes
-#     """
-
-#     def __init__(self):
-#         super(MulticlassDiceLoss, self).__init__()
-
-#     def forward(self, input, target, weights=None):
-
-#         C = target.shape[1]
-
-#         # if weights is None:
-#         #   weights = torch.ones(C) #uniform weights for all classes
-
-#         dice = DiceLoss()
-#         totalLoss = 0
-
-#         for i in range(C):
-#             diceLoss = dice(input[:, i], target[:, i])
-#             if weights is not None:
-#                 diceLoss *= weights[i]
-#             totalLoss += diceLoss
-
-#         return totalLoss
-
-
-# class SoftIoULoss(nn.Module):
-#     def __init__(self, n_classes):
-#         super(SoftIoULoss, self).__init__()
-#         self.n_classes = n_classes
-
-#     @staticmethod
-#     def to_one_hot(tensor, n_classes):
-#         n, h, w = tensor.size()
-#         one_hot = torch.zeros(n, n_classes, h, w).scatter_(
-#             1, tensor.view(n, 1, h, w), 1)
-#         return one_hot
-
-#     def forward(self, input, target):
-#         # logit => N x Classes x H x W
-#         # target => N x H x W
-
-#         N = len(input)
-
-#         pred = F.softmax(input, dim=1)
-#         target_onehot = self.to_one_hot(target, self.n_classes)
-
-#         # Numerator Product
-#         inter = pred * target_onehot
-#         # Sum over all pixels N x C x H x W => N x C
-#         inter = inter.view(N, self.n_classes, -1).sum(2)
-
-#         # Denominator
-#         union = pred + target_onehot - (pred * target_onehot)
-#         # Sum over all pixels N x C x H x W => N x C
-#         union = union.view(N, self.n_classes, -1).sum(2)
-
-#         loss = inter / (union + 1e-16)
-
-#         # Return average loss over classes and batch
-#         return -loss.mean()
-
-
-# def iou_pytorch(outputs: torch.Tensor, labels: torch.Tensor, SMOOTH=1e-6):
-#     # You can comment out this line if you are passing tensors of equal shape
-#     # But if you are passing output from UNet or something it will most probably
-#     # be with the BATCH x 1 x H x W shape
-#     outputs = outputs.squeeze(1)  # BATCH x 1 x H x W => BATCH x H x W
-
-#     intersection = (outputs & labels).float().sum(
-#         (1, 2))  # Will be zero if Truth=0 or Prediction=0
-#     union = (outputs | labels).float().sum(
-#         (1, 2))         # Will be zzero if both are 0
-
-#     # We smooth our devision to avoid 0/0
-#     iou = (intersection + SMOOTH) / (union + SMOOTH)
-
-#     # This is equal to comparing with thresolds
-#     thresholded = torch.clamp(20 * (iou - 0.5), 0, 10).ceil() / 10
-
-#     # Or thresholded.mean() if you are interested in average across the batch
-#     return thresholded.mean()
-
-# # Numpy version
-# # Well, it's the same function, so I'm going to omit the comments
-
-
-# def iou_numpy(outputs: np.array, labels: np.array):
-#     outputs = outputs.squeeze(1)
-
-#     intersection = (outputs & labels).sum((1, 2))
-#     union = (outputs | labels).sum((1, 2))
-
-#     iou = (intersection + SMOOTH) / (union + SMOOTH)
-
-#     thresholded = np.ceil(np.clip(20 * (iou - 0.5), 0, 10)) / 10
-
-#     return thresholded  # Or thresholded.mean()
-
-
 if __name__ == '__main__':
 
     # the network need the size to be a multiple of 32, resize is intriduced
     ORIG_SHAPE = (400, 400)
     SHAPE = (512, 512)
-    NAME = 'dinknet34'
-    BATCHSIZE_PER_CARD = 16  # 每个显卡给batchsize给8
+    NAME = 'dinknet101'
+    BATCHSIZE_PER_CARD = 8
 
     train_root = 'dataset/train/'
     image_root = os.path.join(train_root, 'images')
@@ -213,7 +61,8 @@ if __name__ == '__main__':
     # vallist = map(lambda x: x[:-8], imagelist)
     # vallist = list(vallist)
 
-    solver = MyFrame(DinkNet34, dice_bce_loss, 1e-3)
+    # solver = MyFrame(DinkNet34, dice_bce_loss, 1e-3)
+    solver = MyFrame(DinkNet101, dice_bce_loss, 1e-3)
     # solver.load('./weights/test.th')
 
     if torch.cuda.is_available():
@@ -245,23 +94,15 @@ if __name__ == '__main__':
     tic = time()
     # device = torch.device('cuda:0')
     no_optim = 0
-    total_epoch = 100
+    total_epoch = 300
     train_epoch_best_loss = 100.
-
-    # test_loss = 0
-    # criteon = nn.CrossEntropyLoss().to(device)
-    # criteon = DiceLoss()
-    # iou_criteon = SoftIoULoss(2)
-    # scheduler = solver.lr_strategy()  这个学习率调整策略是我加的，还没用，只用了原始的，感兴趣的可以试试
 
     for epoch in range(1, total_epoch + 1):
         print('---------- Epoch:'+str(epoch) + ' ----------')
-        # scheduler.step() 对应上面的学习率策略，须同时打开
-        # print('lr={:.6f}'.format(scheduler.get_lr()[0])) 输出上面的学习率策略，须同时打开
         data_loader_iter = iter(data_loader)
         train_epoch_loss = 0
+
         print('Train:')
-        # for img, mask in tqdm(data_loader_iter, ncols=20, total=len(data_loader_iter)):
         for img, mask in data_loader_iter:
             solver.set_input(img, mask)
             train_loss = solver.optimize()
@@ -269,27 +110,6 @@ if __name__ == '__main__':
         train_epoch_loss /= len(data_loader_iter)
 
         duration_of_epoch = int(time()-tic)
-
-        #  do validation
-        # if epoch % 5 == 0 and os.path.exists('weights/'+NAME+'.th'):
-        #     val_data_loader_iter = iter(val_data_loader)
-        #     print("Validation: ")
-        #     for val_img, val_mask in val_data_loader_iter:
-        #         val_img, val_mask = val_img.to(device), val_mask.cuda().cpu()
-        #         val_mask[np.where(val_mask > 0)] = 1
-        #         val_mask = val_mask.squeeze(0)
-        #         predict_mask = solver.test_one_img(val_img)
-        #         predict_mask_temp = torch.from_numpy(predict_mask).unsqueeze(0)
-        #         predict_mask_use = V(predict_mask_temp.type(
-        #             torch.FloatTensor), volatile=True)
-        #         val_mask_use = V(val_mask.type(
-        #             torch.FloatTensor), volatile=True)
-        #         validation_loss = criteon.forward(
-        #             predict_mask_use, val_mask_use)
-        #         validation_epoch_loss += validation_loss
-        #     validation_loss /= len(val_img_list)
-        #     print('--epoch:', epoch,  '  --validation_loss:',
-        #           validation_loss.item())
 
         if epoch % 5 == 0 and os.path.exists('weights/'+NAME+'.th'):
             val_data_loader_iter = iter(val_data_loader)
@@ -299,57 +119,15 @@ if __name__ == '__main__':
                 solver.set_input(val_img, val_mask)
                 val_loss = solver.optimize(True)
                 validation_epoch_loss += val_loss
-                # val_img, val_mask = val_img.to(device), val_mask.cuda().cpu()
-                # val_mask[np.where(val_mask > 0)] = 1
-                # val_mask = val_mask.squeeze(0)
-                # predict_mask = solver.test_one_img(val_img)
-                # predict_mask_temp = torch.from_numpy(predict_mask).unsqueeze(0)
-                # predict_mask_use = V(predict_mask_temp.type(
-                # torch.FloatTensor), volatile=True)
-                # val_mask_use = V(val_mask.type(
-                # torch.FloatTensor), volatile=True)
-                # validation_loss = solver.loss(val_mask_use, predict_mask_use)
-                # validation_epoch_loss += val_loss.item()
             validation_epoch_loss /= len(val_img_list)
             print('--epoch:', epoch,  '  --validation_loss:',
-                  validation_epoch_loss.item())
-
-        # validation
-
-        # val_data_loader_num = iter(val_data_loader)
-        # test_epoch_loss = 0
-        # test_mean_iou = 0
-        # val_pre_list = []
-        # val_mask_list = []
-        # print('Validation:')
-        # for val_img, val_mask in tqdm(val_data_loader_num, ncols=20, total=len(val_data_loader_num)):
-        #     val_img, val_mask = val_img.to(device), val_mask.cuda().cpu()
-        #     val_mask[np.where(val_mask > 0)] = 1
-        #     val_mask = val_mask.squeeze(0)
-        #     predict = solver.test_one_img(val_img)
-        #     predict_temp = torch.from_numpy(predict).unsqueeze(0)
-        #     predict_use = V(predict_temp.type(
-        #         torch.FloatTensor), volatile=True)
-        #     val_use = V(val_mask.type(torch.FloatTensor), volatile=True)
-        #     test_epoch_loss += criteon.forward(predict_use, val_use)
-        #     predict_use = predict_use.squeeze(0)
-        #     predict_use = predict_use.unsqueeze(1)
-        #     predict_use[predict_use >= 0.5] = 1
-        #     predict_use[predict_use < 0.5] = 0
-        #     predict_use = predict_use.type(torch.LongTensor)
-        #     val_use = val_use.squeeze(1).type(torch.LongTensor)
-        #     test_mean_iou += iou_pytorch(predict_use, val_use)
-
-        # batch_iou = test_mean_iou / len(val_data_loader_num)
-        # val_loss = test_epoch_loss / len(val_data_loader_num)
-
-        # validation finish
+                  validation_epoch_loss)
 
         mylog.write('********************' + '\n')
         mylog.write('--epoch:' + str(epoch) + '  --time:' + str(duration_of_epoch) + '  --train_loss:' + str(
-            train_epoch_loss.item()) + '\n')
+            train_epoch_loss) + '\n')
         print('--epoch:', epoch, '  --time:', duration_of_epoch, '  --train_loss:',
-              train_epoch_loss.item())
+              train_epoch_loss)
         if train_epoch_loss >= train_epoch_best_loss:
             no_optim += 1
         else:
