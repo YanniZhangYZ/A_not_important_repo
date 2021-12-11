@@ -61,13 +61,18 @@ class MyFrame():
         if self.mask is not None:
             self.mask = V(self.mask.cuda(), volatile=volatile)
 
-    def optimize(self):
+    def optimize(self, eval=False):
         self.forward()
-        self.optimizer.zero_grad()
+        if not eval:
+            self.optimizer.zero_grad()
+            self.net.train()
+        else:
+            self.net.eval()
         pred = self.net.forward(self.img)
         loss = self.loss(self.mask, pred)
-        loss.backward()
-        self.optimizer.step()
+        if not eval:
+            loss.backward()
+            self.optimizer.step()
         return loss
 
     def save(self, path):

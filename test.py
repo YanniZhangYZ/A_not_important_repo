@@ -142,21 +142,32 @@ class TTAFrame():
         self.net.load_state_dict(torch.load(path))
 
 
-#source = 'dataset/test/'
-source = 'dataset/valid'
-val = os.listdir(source)
-solver = TTAFrame(DinkNet34)
-# solver = TTAFrame(LinkNet34)
-solver.load('weights/dinknet.th')
-tic = time()
-target = 'submits/log01_dink34/'
-os.mkdir(target)
-for i, name in enumerate(val):
-    if i % 10 == 0:
-        print(i/10, '    ', '%.2f' % (time()-tic))
-    # 这里好奇不？别激动，作者这里的意图应该是类似于归一化数据的，你们可以自己写一个不那么麻烦的，我还没时间试，先用这个吧，这种方式值得探究一下的
-    mask = solver.test_one_img_from_path_8(source+name)
-    mask[mask > 4.0] = 255
-    mask[mask <= 4.0] = 0
-    # mask = np.concatenate([mask[:,:,None],mask[:,:,None],mask[:,:,None]],axis=2)
-    cv2.imwrite(target+name[:-7]+'mask.png', mask.astype(np.uint8))
+if __name__ == '__main__':
+
+    #source = 'dataset/test/'
+    source_root = 'dataset/test_set_images'
+    folder_names = os.listdir(source_root)
+    # paths = []
+    img_names = [str(i)+'.png' for i in folder_names]
+    # for folder in foldernames:
+    # test_file_path = os.path.join(source_root, folder)
+    # paths.append(test_file_path)
+    # img_names.append(folder+'.png')
+    # img_names.append(os.listdir(test_file_path))
+    # val = os.listdir(source)
+    solver = TTAFrame(DinkNet34)
+    # solver = TTAFrame(LinkNet34)
+    solver.load('weights/dinknet.th')
+    tic = time()
+    target = 'submits/dink34/'
+    os.mkdir(target)
+    for i, name in enumerate(img_names):
+        if i % 10 == 0:
+            print(i/10, '    ', '%.2f' % (time()-tic))
+        # 这里好奇不？别激动，作者这里的意图应该是类似于归一化数据的，你们可以自己写一个不那么麻烦的，我还没时间试，先用这个吧，这种方式值得探究一下的
+        path = os.path.join(source_root, folder_names[i], name)
+        mask = solver.test_one_img_from_path_8(path)
+        mask[mask > 4.0] = 255
+        mask[mask <= 4.0] = 0
+        # mask = np.concatenate([mask[:,:,None],mask[:,:,None],mask[:,:,None]],axis=2)
+        cv2.imwrite(target+name[:-4]+'mask.png', mask.astype(np.uint8))

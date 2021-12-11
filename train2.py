@@ -243,7 +243,6 @@ if __name__ == '__main__':
     no_optim = 0
     total_epoch = 100
     train_epoch_best_loss = 100.
-    validation_epoch_loss = 100.
 
     # test_loss = 0
     criteon = nn.CrossEntropyLoss().to(device)
@@ -268,24 +267,48 @@ if __name__ == '__main__':
         duration_of_epoch = int(time()-tic)
 
         #  do validation
-        if epoch % 5 == 0:
+        # if epoch % 5 == 0 and os.path.exists('weights/'+NAME+'.th'):
+        #     val_data_loader_iter = iter(val_data_loader)
+        #     print("Validation: ")
+        #     for val_img, val_mask in val_data_loader_iter:
+        #         val_img, val_mask = val_img.to(device), val_mask.cuda().cpu()
+        #         val_mask[np.where(val_mask > 0)] = 1
+        #         val_mask = val_mask.squeeze(0)
+        #         predict_mask = solver.test_one_img(val_img)
+        #         predict_mask_temp = torch.from_numpy(predict_mask).unsqueeze(0)
+        #         predict_mask_use = V(predict_mask_temp.type(
+        #             torch.FloatTensor), volatile=True)
+        #         val_mask_use = V(val_mask.type(
+        #             torch.FloatTensor), volatile=True)
+        #         validation_loss = criteon.forward(
+        #             predict_mask_use, val_mask_use)
+        #         validation_epoch_loss += validation_loss
+        #     validation_loss /= len(val_img_list)
+        #     print('--epoch:', epoch,  '  --validation_loss:',
+        #           validation_loss.item())
+
+        if epoch % 5 == 0 and os.path.exists('weights/'+NAME+'.th'):
             val_data_loader_iter = iter(val_data_loader)
+            validation_epoch_loss = 0
             print("Validation: ")
             for val_img, val_mask in val_data_loader_iter:
-                val_mask[np.where(val_mask > 0)] = 1
-                val_mask = val_mask.squeeze(0)
-                predict_mask = solver.test_one_img(image_root + val_img)
-                predict_mask_temp = torch.from_numpy(predict_mask).unsqueeze(0)
-                predict_mask_use = V(predict_mask_temp.type(
-                    torch.FloatTensor), volatile=True)
-                val_mask_use = V(val_mask.type(
-                    torch.FloatTensor), volatile=True)
-                validation_loss = criteon.forward(
-                    predict_mask_use, val_mask_use)
-                validation_epoch_loss += validation_loss
-            validation_loss /= len(val_img_list)
+                solver.set_input(val_img, val_mask)
+                val_loss = solver.optimize(True)
+                validation_epoch_loss += val_loss
+                # val_img, val_mask = val_img.to(device), val_mask.cuda().cpu()
+                # val_mask[np.where(val_mask > 0)] = 1
+                # val_mask = val_mask.squeeze(0)
+                # predict_mask = solver.test_one_img(val_img)
+                # predict_mask_temp = torch.from_numpy(predict_mask).unsqueeze(0)
+                # predict_mask_use = V(predict_mask_temp.type(
+                # torch.FloatTensor), volatile=True)
+                # val_mask_use = V(val_mask.type(
+                # torch.FloatTensor), volatile=True)
+                # validation_loss = solver.loss(val_mask_use, predict_mask_use)
+                # validation_epoch_loss += val_loss.item()
+            validation_epoch_loss /= len(val_img_list)
             print('--epoch:', epoch,  '  --validation_loss:',
-                  validation_loss.item())
+                  validation_epoch_loss.item())
 
         # validation
 
