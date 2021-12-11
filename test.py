@@ -153,7 +153,12 @@ class TTAFrame():
         return mask3
 
     def load(self, path):
-        self.net.load_state_dict(torch.load(path))
+        # self.net.load_state_dict(torch.load(path))
+        if torch.cuda.is_available():
+            self.net.load_state_dict(torch.load(path))
+        else:
+            self.net.load_state_dict(torch.load(
+                path, map_location=self.device))
 
 
 if __name__ == '__main__':
