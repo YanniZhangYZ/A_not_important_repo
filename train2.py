@@ -328,9 +328,11 @@ if __name__ == '__main__':
         else:
             no_optim = 0
             train_epoch_best_loss = train_epoch_loss
-            last_save_name = 'weights/' + NAME + \
-                '_{:.5f}.th'.format(train_epoch_loss)
-            solver.save(last_save_name)
+            # last_save_name = 'weights/' + NAME + \
+            #     '_{:.5f}.th'.format(train_epoch_loss)
+            # solver.save(last_save_name)
+            solver.save('weights/'+NAME+'.th')
+
         if no_optim > 6:
             print(mylog, 'early stop at %d epoch' % epoch)
             print('early stop at %d epoch' % epoch)
@@ -338,7 +340,8 @@ if __name__ == '__main__':
         if no_optim > 3:
             if solver.old_lr < 5e-7:
                 break
-            solver.load(last_save_name)
+            # solver.load(last_save_name)
+            solver.load('weights/'+NAME+'.th')
             solver.update_lr(5.0, factor=True, mylog=mylog)
         mylog.flush()
 
