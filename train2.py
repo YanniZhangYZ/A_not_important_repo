@@ -4,6 +4,8 @@ from torch.optim import lr_scheduler
 import torch.nn as nn
 import torch.utils.data as data
 from torch.autograd import Variable as V
+import random
+import math
 
 import cv2
 import os
@@ -21,7 +23,7 @@ from loss import dice_bce_loss
 from data import ImageFolder
 
 import torch.nn.functional as F
-# from test import TTAFrame
+from test import TTAFrame
 
 
 # def iou(img_true, img_pred):
@@ -53,24 +55,24 @@ import torch.nn.functional as F
 #     return ones.view(*size)
 
 
-# class DiceLoss(nn.Module):
-#     def __init__(self):
-#         super(DiceLoss, self).__init__()
+class DiceLoss(nn.Module):
+    def __init__(self):
+        super(DiceLoss, self).__init__()
 
-#     def forward(self, input, target):
-#         N = target.size(0)
-#         smooth = 1
+    def forward(self, input, target):
+        N = target.size(0)
+        smooth = 1
 
-#         input_flat = input.view(N, -1)
-#         target_flat = target.view(N, -1)
+        input_flat = input.view(N, -1)
+        target_flat = target.view(N, -1)
 
-#         intersection = input_flat * target_flat
+        intersection = input_flat * target_flat
 
-#         loss = 2 * (intersection.sum(1) + smooth) / \
-#             (input_flat.sum(1) + target_flat.sum(1) + smooth)
-#         loss = 1 - loss.sum() / N
+        loss = 2 * (intersection.sum(1) + smooth) / \
+            (input_flat.sum(1) + target_flat.sum(1) + smooth)
+        loss = 1 - loss.sum() / N
 
-#         return loss
+        return loss
 
 
 # class MulticlassDiceLoss(nn.Module):
@@ -187,14 +189,24 @@ if __name__ == '__main__':
     train_root = 'dataset/train/'
     image_root = os.path.join(train_root, 'images')
     gt_root = os.path.join(train_root, 'groundtruth')
-    image_list = sorted(
-        [f for f in os.listdir(image_root) if f.endswith('.png')])
-    gt_list = sorted(
-        [f for f in os.listdir(gt_root) if f.endswith('.png')])
+    image_list = np.array(sorted(
+        [f for f in os.listdir(image_root) if f.endswith('.png')]))
+    gt_list = np.array(sorted(
+        [f for f in os.listdir(gt_root) if f.endswith('.png')]))
     # imagelist = filter(lambda x: x.find('sat') != -1, os.listdir(train_root))
 
-    train_split = len(image_list)
-    trainlist = image_list[:train_split]
+    # random select 20% of training data for validation
+    total_data_num = image_list.shape[0]
+    validation_data_num = math.ceil(total_data_num * 0.2)
+    validation_idx = random.sample(range(total_data_num), validation_data_num)
+    new_train_indx = list(
+        set(range(total_data_num)).difference(set(validation_idx)))
+
+    val_img_list = image_list[validation_idx].tolist()
+    val_gt_list = gt_list[validation_idx].tolist()
+    image_list = image_list[new_train_indx].tolist()
+    gt_list = gt_list[new_train_indx].tolist()
+    # trainlist = image_list
 
     # val_root = 'D:/complete_project/Dinknet/road512/val/'
     # imagelist = filter(lambda x: x.find('sat') != -1, os.listdir(val_root))
@@ -205,25 +217,25 @@ if __name__ == '__main__':
     # solver.load('./weights/test.th')
 
     train_batchsize = torch.cuda.device_count() * BATCHSIZE_PER_CARD
-    # val_batchsize = torch.cuda.device_count() * BATCHSIZE_PER_CARD * 2
+    val_batchsize = torch.cuda.device_count() * BATCHSIZE_PER_CARD
 
     #  data preprocessing here
-    train_dataset = ImageFolder(trainlist, image_root, gt_root, SHAPE)
-    # val_dataset = ImageFolder(vallist, val_root)
-    print("train_dataset", train_dataset)
+    train_dataset = ImageFolder(image_list, image_root, gt_root, SHAPE)
+    val_dataset = ImageFolder(val_img_list, image_root, gt_root, SHAPE)
+    # print("train_dataset", train_dataset)
 
     data_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=train_batchsize,
         shuffle=True,
         num_workers=0)
-    print("data loader", data_loader)
+    # print("data loader", data_loader)
 
-    # val_data_loader = torch.utils.data.DataLoader(
-    #     val_dataset,
-    #     batch_size=val_batchsize,
-    #     shuffle=True,
-    #     num_workers=0)
+    val_data_loader = torch.utils.data.DataLoader(
+        val_dataset,
+        batch_size=val_batchsize,
+        shuffle=True,
+        num_workers=0)
 
     mylog = open('logs/'+NAME+'.log', 'w')
     tic = time()
@@ -231,10 +243,11 @@ if __name__ == '__main__':
     no_optim = 0
     total_epoch = 100
     train_epoch_best_loss = 100.
+    validation_epoch_loss = 100.
 
     # test_loss = 0
-    # criteon = nn.CrossEntropyLoss().to(device)
-    # criteon = DiceLoss()
+    criteon = nn.CrossEntropyLoss().to(device)
+    criteon = DiceLoss()
     # iou_criteon = SoftIoULoss(2)
     # scheduler = solver.lr_strategy()  这个学习率调整策略是我加的，还没用，只用了原始的，感兴趣的可以试试
 
@@ -251,6 +264,30 @@ if __name__ == '__main__':
             train_loss = solver.optimize()
             train_epoch_loss += train_loss
         train_epoch_loss /= len(data_loader_iter)
+
+        duration_of_epoch = int(time()-tic)
+
+        #  do validation
+        if epoch % 5 == 0:
+            val_data_loader_iter = iter(val_data_loader)
+            print("Validation: ")
+            for val_img, val_mask in val_data_loader_iter:
+                val_mask[np.where(val_mask > 0)] = 1
+                val_mask = val_mask.squeeze(0)
+                predict_mask = solver.test_one_img(image_root + val_img)
+                predict_mask_temp = torch.from_numpy(predict_mask).unsqueeze(0)
+                predict_mask_use = V(predict_mask_temp.type(
+                    torch.FloatTensor), volatile=True)
+                val_mask_use = V(val_mask.type(
+                    torch.FloatTensor), volatile=True)
+                validation_loss = criteon.forward(
+                    predict_mask_use, val_mask_use)
+                validation_epoch_loss += validation_loss
+            validation_loss /= len(val_img_list)
+            print('--epoch:', epoch,  '  --validation_loss:',
+                  validation_loss.item())
+
+        # validation
 
         # val_data_loader_num = iter(val_data_loader)
         # test_epoch_loss = 0
@@ -279,11 +316,13 @@ if __name__ == '__main__':
         # batch_iou = test_mean_iou / len(val_data_loader_num)
         # val_loss = test_epoch_loss / len(val_data_loader_num)
 
+        # validation finish
+
         mylog.write('********************' + '\n')
-        mylog.write('--epoch:' + str(epoch) + '  --time:' + str(int(time()-tic)) + '  --train_loss:' + str(
-            train_epoch_loss.item()) + '--SHAPE:' + str(SHAPE) + '\n')
-        print('--epoch:', epoch, '  --time:', int(time()-tic), '  --train_loss:',
-              train_epoch_loss.item(), '--SHAPE:', str(SHAPE))
+        mylog.write('--epoch:' + str(epoch) + '  --time:' + str(duration_of_epoch) + '  --train_loss:' + str(
+            train_epoch_loss.item()) + '\n')
+        print('--epoch:', epoch, '  --time:', duration_of_epoch, '  --train_loss:',
+              train_epoch_loss.item())
         if train_epoch_loss >= train_epoch_best_loss:
             no_optim += 1
         else:

@@ -86,8 +86,8 @@ class MyFrame():
         print('update learning rate: %f -> %f' % (self.old_lr, new_lr))
         self.old_lr = new_lr
 
-    def lr_strategy(self):  # 新加的
-        # scheduler = lr_scheduler.StepLR(self.optimizer, step_size=30, gamma=0.1)
-        # scheduler = lr_scheduler.MultiStepLR(self.optimizer, [30, 80], 0.1)
-        scheduler = lr_scheduler.ExponentialLR(self.optimizer, gamma=0.9)
-        return scheduler
+    # def lr_strategy(self):  # 新加的
+    #     # scheduler = lr_scheduler.StepLR(self.optimizer, step_size=30, gamma=0.1)
+    #     # scheduler = lr_scheduler.MultiStepLR(self.optimizer, [30, 80], 0.1)
+    #     scheduler = lr_scheduler.ExponentialLR(self.optimizer, gamma=0.9)
+    #     return scheduler
