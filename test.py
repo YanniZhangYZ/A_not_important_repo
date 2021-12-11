@@ -21,14 +21,20 @@ BATCHSIZE_PER_CARD = 16
 
 class TTAFrame():
     def __init__(self, net):
-        self.net = net().cuda()
+        self.device = torch.device(
+            'cuda' if torch.cuda.is_available() else 'cpu')
+        # self.net = net().cuda()
+        self.net = net().to(self.device)
         self.net = torch.nn.DataParallel(
             self.net, device_ids=range(torch.cuda.device_count()))
 
     def test_one_img_from_path(self, path, evalmode=True):
         if evalmode:
             self.net.eval()
-        batchsize = torch.cuda.device_count() * BATCHSIZE_PER_CARD
+        if torch.cuda.is_available():
+            batchsize = torch.cuda.device_count() * BATCHSIZE_PER_CARD
+        else:
+            batchsize = BATCHSIZE_PER_CARD
         if batchsize >= 8:
             return self.test_one_img_from_path_1(path)
         elif batchsize >= 4:
@@ -49,10 +55,14 @@ class TTAFrame():
         img3 = img3.transpose(0, 3, 1, 2)
         img4 = img4.transpose(0, 3, 1, 2)
 
-        img1 = V(torch.Tensor(np.array(img1, np.float32)/255.0 * 3.2 - 1.6).cuda())
-        img2 = V(torch.Tensor(np.array(img2, np.float32)/255.0 * 3.2 - 1.6).cuda())
-        img3 = V(torch.Tensor(np.array(img3, np.float32)/255.0 * 3.2 - 1.6).cuda())
-        img4 = V(torch.Tensor(np.array(img4, np.float32)/255.0 * 3.2 - 1.6).cuda())
+        img1 = V(torch.Tensor(np.array(img1, np.float32) /
+                 255.0 * 3.2 - 1.6).to(self.device))
+        img2 = V(torch.Tensor(np.array(img2, np.float32) /
+                 255.0 * 3.2 - 1.6).to(self.device))
+        img3 = V(torch.Tensor(np.array(img3, np.float32) /
+                 255.0 * 3.2 - 1.6).to(self.device))
+        img4 = V(torch.Tensor(np.array(img4, np.float32) /
+                 255.0 * 3.2 - 1.6).to(self.device))
 
         maska = self.net.forward(img1).squeeze().cpu().data.numpy()
         maskb = self.net.forward(img2).squeeze().cpu().data.numpy()
@@ -78,10 +88,14 @@ class TTAFrame():
         img3 = img3.transpose(0, 3, 1, 2)
         img4 = img4.transpose(0, 3, 1, 2)
 
-        img1 = V(torch.Tensor(np.array(img1, np.float32)/255.0 * 3.2 - 1.6).cuda())
-        img2 = V(torch.Tensor(np.array(img2, np.float32)/255.0 * 3.2 - 1.6).cuda())
-        img3 = V(torch.Tensor(np.array(img3, np.float32)/255.0 * 3.2 - 1.6).cuda())
-        img4 = V(torch.Tensor(np.array(img4, np.float32)/255.0 * 3.2 - 1.6).cuda())
+        img1 = V(torch.Tensor(np.array(img1, np.float32) /
+                 255.0 * 3.2 - 1.6).to(self.device))
+        img2 = V(torch.Tensor(np.array(img2, np.float32) /
+                 255.0 * 3.2 - 1.6).to(self.device))
+        img3 = V(torch.Tensor(np.array(img3, np.float32) /
+                 255.0 * 3.2 - 1.6).to(self.device))
+        img4 = V(torch.Tensor(np.array(img4, np.float32) /
+                 255.0 * 3.2 - 1.6).to(self.device))
 
         maska = self.net.forward(img1).squeeze().cpu().data.numpy()
         maskb = self.net.forward(img2).squeeze().cpu().data.numpy()
@@ -103,10 +117,10 @@ class TTAFrame():
         img4 = np.array(img3)[:, :, ::-1]
         img5 = img3.transpose(0, 3, 1, 2)
         img5 = np.array(img5, np.float32)/255.0 * 3.2 - 1.6
-        img5 = V(torch.Tensor(img5).cuda())
+        img5 = V(torch.Tensor(img5).to(self.device))
         img6 = img4.transpose(0, 3, 1, 2)
         img6 = np.array(img6, np.float32)/255.0 * 3.2 - 1.6
-        img6 = V(torch.Tensor(img6).cuda())
+        img6 = V(torch.Tensor(img6).to(self.device))
 
         maska = self.net.forward(img5).squeeze(
         ).cpu().data.numpy()  # .squeeze(1)
@@ -128,7 +142,7 @@ class TTAFrame():
         img4 = np.array(img3)[:, :, ::-1]
         img5 = np.concatenate([img3, img4]).transpose(0, 3, 1, 2)
         img5 = np.array(img5, np.float32)/255.0 * 3.2 - 1.6
-        img5 = V(torch.Tensor(img5).cuda())
+        img5 = V(torch.Tensor(img5).to(self.device))
 
         mask = self.net.forward(img5).squeeze(
         ).cpu().data.numpy()  # .squeeze(1)
@@ -146,7 +160,7 @@ if __name__ == '__main__':
 
     #source = 'dataset/test/'
     source_root = 'dataset/test_set_images'
-    folder_names = os.listdir(source_root)
+    folder_names = sorted(os.listdir(source_root))
     # paths = []
     img_names = [str(i)+'.png' for i in folder_names]
     # for folder in foldernames:
@@ -157,7 +171,7 @@ if __name__ == '__main__':
     # val = os.listdir(source)
     solver = TTAFrame(DinkNet34)
     # solver = TTAFrame(LinkNet34)
-    solver.load('weights/dinknet.th')
+    solver.load('weights/dinknet34.th')
     tic = time()
     target = 'submits/dink34/'
     os.mkdir(target)
@@ -165,9 +179,10 @@ if __name__ == '__main__':
         if i % 10 == 0:
             print(i/10, '    ', '%.2f' % (time()-tic))
         # 这里好奇不？别激动，作者这里的意图应该是类似于归一化数据的，你们可以自己写一个不那么麻烦的，我还没时间试，先用这个吧，这种方式值得探究一下的
+        print(name)
         path = os.path.join(source_root, folder_names[i], name)
-        mask = solver.test_one_img_from_path_8(path)
+        mask = solver.test_one_img_from_path(path)
         mask[mask > 4.0] = 255
         mask[mask <= 4.0] = 0
         # mask = np.concatenate([mask[:,:,None],mask[:,:,None],mask[:,:,None]],axis=2)
-        cv2.imwrite(target+name[:-4]+'mask.png', mask.astype(np.uint8))
+        cv2.imwrite(target+name[:-4]+'_mask.png', mask.astype(np.uint8))

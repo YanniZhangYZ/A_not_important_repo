@@ -55,24 +55,24 @@ from test import TTAFrame
 #     return ones.view(*size)
 
 
-class DiceLoss(nn.Module):
-    def __init__(self):
-        super(DiceLoss, self).__init__()
+# class DiceLoss(nn.Module):
+#     def __init__(self):
+#         super(DiceLoss, self).__init__()
 
-    def forward(self, input, target):
-        N = target.size(0)
-        smooth = 1
+#     def forward(self, input, target):
+#         N = target.size(0)
+#         smooth = 1
 
-        input_flat = input.view(N, -1)
-        target_flat = target.view(N, -1)
+#         input_flat = input.view(N, -1)
+#         target_flat = target.view(N, -1)
 
-        intersection = input_flat * target_flat
+#         intersection = input_flat * target_flat
 
-        loss = 2 * (intersection.sum(1) + smooth) / \
-            (input_flat.sum(1) + target_flat.sum(1) + smooth)
-        loss = 1 - loss.sum() / N
+#         loss = 2 * (intersection.sum(1) + smooth) / \
+#             (input_flat.sum(1) + target_flat.sum(1) + smooth)
+#         loss = 1 - loss.sum() / N
 
-        return loss
+#         return loss
 
 
 # class MulticlassDiceLoss(nn.Module):
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     # the network need the size to be a multiple of 32, resize is intriduced
     ORIG_SHAPE = (400, 400)
     SHAPE = (512, 512)
-    NAME = 'dinknet3'
+    NAME = 'dinknet34'
     BATCHSIZE_PER_CARD = 16  # 每个显卡给batchsize给8
 
     train_root = 'dataset/train/'
@@ -216,8 +216,12 @@ if __name__ == '__main__':
     solver = MyFrame(DinkNet34, dice_bce_loss, 1e-3)
     # solver.load('./weights/test.th')
 
-    train_batchsize = torch.cuda.device_count() * BATCHSIZE_PER_CARD
-    val_batchsize = torch.cuda.device_count() * BATCHSIZE_PER_CARD
+    if torch.cuda.is_available():
+        train_batchsize = torch.cuda.device_count() * BATCHSIZE_PER_CARD
+        val_batchsize = torch.cuda.device_count() * BATCHSIZE_PER_CARD
+    else:
+        train_batchsize = BATCHSIZE_PER_CARD
+        val_batchsize = BATCHSIZE_PER_CARD
 
     #  data preprocessing here
     train_dataset = ImageFolder(image_list, image_root, gt_root, SHAPE)
@@ -239,14 +243,14 @@ if __name__ == '__main__':
 
     mylog = open('logs/'+NAME+'.log', 'w')
     tic = time()
-    device = torch.device('cuda:0')
+    # device = torch.device('cuda:0')
     no_optim = 0
     total_epoch = 100
     train_epoch_best_loss = 100.
 
     # test_loss = 0
-    criteon = nn.CrossEntropyLoss().to(device)
-    criteon = DiceLoss()
+    # criteon = nn.CrossEntropyLoss().to(device)
+    # criteon = DiceLoss()
     # iou_criteon = SoftIoULoss(2)
     # scheduler = solver.lr_strategy()  这个学习率调整策略是我加的，还没用，只用了原始的，感兴趣的可以试试
 
