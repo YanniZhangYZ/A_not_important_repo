@@ -30,8 +30,8 @@ if __name__ == '__main__':
     # the network need the size to be a multiple of 32, resize is intriduced
     ORIG_SHAPE = (400, 400)
     SHAPE = (512, 512)
-    NAME = 'dinknet152'
-    BATCHSIZE_PER_CARD = 4
+    NAME = 'dinknet50'
+    BATCHSIZE_PER_CARD = 64
 
     train_root = 'dataset/train/'
     image_root = os.path.join(train_root, 'images')
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # vallist = list(vallist)
 
     # solver = MyFrame(DinkNet34, dice_bce_loss, 1e-3)
-    solver = MyFrame(DinkNet152, dice_bce_loss, 1e-3)
+    solver = MyFrame(DinkNet50, dice_bce_loss, 1e-3)
     # solver.load('./weights/test.th')
 
     if torch.cuda.is_available():
@@ -109,6 +109,11 @@ if __name__ == '__main__':
         train_epoch_loss /= len(data_loader_iter)
 
         duration_of_epoch = int(time()-tic)
+        mylog.write('********************' + '\n')
+        mylog.write('--epoch:' + str(epoch) + '  --time:' + str(duration_of_epoch) + '  --train_loss:' + str(
+            train_epoch_loss) + '\n')
+        print('--epoch:', epoch, '  --time:', duration_of_epoch, '  --train_loss:',
+              train_epoch_loss)
 
         if epoch % 5 == 0 and os.path.exists('weights/'+NAME+'.th'):
             val_data_loader_iter = iter(val_data_loader)
@@ -119,14 +124,11 @@ if __name__ == '__main__':
                 val_loss = solver.optimize(True)
                 validation_epoch_loss += val_loss
             validation_epoch_loss /= len(val_img_list)
+            mylog.write('--epoch:' + str(epoch) +
+                        '  --validation_loss:' + str(validation_epoch_loss) + '\n')
             print('--epoch:', epoch,  '  --validation_loss:',
                   validation_epoch_loss)
 
-        mylog.write('********************' + '\n')
-        mylog.write('--epoch:' + str(epoch) + '  --time:' + str(duration_of_epoch) + '  --train_loss:' + str(
-            train_epoch_loss) + '\n')
-        print('--epoch:', epoch, '  --time:', duration_of_epoch, '  --train_loss:',
-              train_epoch_loss)
         if train_epoch_loss >= train_epoch_best_loss:
             no_optim += 1
         else:

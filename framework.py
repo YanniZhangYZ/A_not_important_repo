@@ -8,7 +8,8 @@ import numpy as np
 
 
 class MyFrame():
-    def __init__(self, net, loss, lr=2e-4, evalmode=False):
+    # def __init__(self, net, loss, lr=2e-4, evalmode=False):
+    def __init__(self, net, loss, lr=2e-2, evalmode=False):
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
         # self.net = net().cuda()
