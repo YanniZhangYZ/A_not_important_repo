@@ -10,14 +10,13 @@ import math
 import cv2
 import os
 import warnings
-from tqdm import tqdm
 import numpy as np
 
 from time import time
 
 from networks.unet import Unet
 from networks.dunet import Dunet
-from networks.dinknet import LinkNet34, DinkNet34, DinkNet50, DinkNet101, DinkNet34_less_pool
+from networks.dinknet import LinkNet34, DinkNet34, DinkNet50, DinkNet101, DinkNet152, DinkNet34_less_pool
 from framework import MyFrame
 from loss import dice_bce_loss
 from data import ImageFolder
@@ -31,8 +30,8 @@ if __name__ == '__main__':
     # the network need the size to be a multiple of 32, resize is intriduced
     ORIG_SHAPE = (400, 400)
     SHAPE = (512, 512)
-    NAME = 'dinknet101'
-    BATCHSIZE_PER_CARD = 8
+    NAME = 'dinknet152'
+    BATCHSIZE_PER_CARD = 4
 
     train_root = 'dataset/train/'
     image_root = os.path.join(train_root, 'images')
@@ -62,7 +61,7 @@ if __name__ == '__main__':
     # vallist = list(vallist)
 
     # solver = MyFrame(DinkNet34, dice_bce_loss, 1e-3)
-    solver = MyFrame(DinkNet101, dice_bce_loss, 1e-3)
+    solver = MyFrame(DinkNet152, dice_bce_loss, 1e-3)
     # solver.load('./weights/test.th')
 
     if torch.cuda.is_available():

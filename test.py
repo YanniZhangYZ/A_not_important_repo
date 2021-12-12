@@ -13,10 +13,10 @@ from time import time
 
 from networks.unet import Unet
 from networks.dunet import Dunet
-from networks.dinknet import LinkNet34, DinkNet34, DinkNet50, DinkNet101, DinkNet34_less_pool
+from networks.dinknet import LinkNet34, DinkNet34, DinkNet50, DinkNet101, DinkNet152, DinkNet34_less_pool
 
 
-BATCHSIZE_PER_CARD = 8
+BATCHSIZE_PER_CARD = 4
 
 
 class TTAFrame():
@@ -176,9 +176,9 @@ if __name__ == '__main__':
     # val = os.listdir(source)
     solver = TTAFrame(DinkNet101)
     # solver = TTAFrame(LinkNet34)
-    solver.load('weights/dinknet101.th')
+    solver.load('weights/dinknet152.th')
     tic = time()
-    target = 'submits/dink101/'
+    target = 'submits/dink152/'
     os.mkdir(target)
     for i, name in enumerate(img_names):
         if i % 10 == 0:
