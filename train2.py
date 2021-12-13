@@ -1,15 +1,15 @@
 import torch
-import torch.optim as optim
-from torch.optim import lr_scheduler
-import torch.nn as nn
-import torch.utils.data as data
-from torch.autograd import Variable as V
+# import torch.optim as optim
+# from torch.optim import lr_scheduler
+# import torch.nn as nn
+# import torch.utils.data as data
+# from torch.autograd import Variable as V
 import random
 import math
 
-import cv2
+# import cv2
 import os
-import warnings
+# import warnings
 import numpy as np
 
 from time import time
@@ -21,16 +21,16 @@ from framework import MyFrame
 from loss import dice_bce_loss
 from data import ImageFolder
 
-import torch.nn.functional as F
-from test import TTAFrame
+# import torch.nn.functional as F
+# from test import TTAFrame
 
 
 if __name__ == '__main__':
 
     # the network need the size to be a multiple of 32, resize is intriduced
     ORIG_SHAPE = (400, 400)
-    SHAPE = (512, 512)
-    NAME = 'DinkNet152_8'
+    SHAPE = (384, 384)
+    NAME = 'DinkNet152_8_2e_4'
     BATCHSIZE_PER_CARD = 8
 
     train_root = 'dataset/train/'
@@ -53,16 +53,8 @@ if __name__ == '__main__':
     val_gt_list = gt_list[validation_idx].tolist()
     image_list = image_list[new_train_indx].tolist()
     gt_list = gt_list[new_train_indx].tolist()
-    # trainlist = image_list
 
-    # val_root = 'D:/complete_project/Dinknet/road512/val/'
-    # imagelist = filter(lambda x: x.find('sat') != -1, os.listdir(val_root))
-    # vallist = map(lambda x: x[:-8], imagelist)
-    # vallist = list(vallist)
-
-    # solver = MyFrame(DinkNet34, dice_bce_loss, 1e-3)
-    solver = MyFrame(DinkNet152, dice_bce_loss, 1e-3)
-    # solver.load('./weights/test.th')
+    solver = MyFrame(DinkNet152, dice_bce_loss, 2e-4)
 
     if torch.cuda.is_available():
         train_batchsize = torch.cuda.device_count() * BATCHSIZE_PER_CARD
@@ -133,13 +125,10 @@ if __name__ == '__main__':
         else:
             no_optim = 0
             train_epoch_best_loss = train_epoch_loss
-            # last_save_name = 'weights/' + NAME + \
-            #     '_{:.5f}.th'.format(train_epoch_loss)
-            # solver.save(last_save_name)
             solver.save('weights/'+NAME+'.th')
 
         if no_optim > 6:
-            print(mylog, 'early stop at %d epoch' % epoch)
+            mylog.write('early stop at' + str(epoch)+'epoch')
             print('early stop at %d epoch' % epoch)
             break
         if no_optim > 3:

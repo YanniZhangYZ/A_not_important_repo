@@ -51,16 +51,14 @@ class MyFrame():
         img = V(torch.Tensor(img).to(self.device))
 
         mask = self.net.forward(img).squeeze(
-        ).cpu().data.numpy()  # .squeeze(1)
+        ).cpu().data.numpy()
         mask[mask > 0.5] = 1
         mask[mask <= 0.5] = 0
         return mask
 
     def forward(self, volatile=False):
-        # self.img = V(self.img.cuda(), volatile=volatile)
         self.img = V(self.img.to(self.device), volatile=volatile)
         if self.mask is not None:
-            # self.mask = V(self.mask.cuda(), volatile=volatile)
             self.mask = V(self.mask.to(self.device), volatile=volatile)
 
     def optimize(self, eval=False):
