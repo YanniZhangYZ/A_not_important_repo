@@ -30,8 +30,8 @@ if __name__ == '__main__':
     # the network need the size to be a multiple of 32, resize is intriduced
     ORIG_SHAPE = (400, 400)
     SHAPE = (512, 512)
-    NAME = 'dinknet50'
-    BATCHSIZE_PER_CARD = 64
+    NAME = 'DinkNet152_8'
+    BATCHSIZE_PER_CARD = 8
 
     train_root = 'dataset/train/'
     image_root = os.path.join(train_root, 'images')
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # vallist = list(vallist)
 
     # solver = MyFrame(DinkNet34, dice_bce_loss, 1e-3)
-    solver = MyFrame(DinkNet50, dice_bce_loss, 1e-3)
+    solver = MyFrame(DinkNet152, dice_bce_loss, 1e-3)
     # solver.load('./weights/test.th')
 
     if torch.cuda.is_available():
@@ -91,7 +91,6 @@ if __name__ == '__main__':
 
     mylog = open('logs/'+NAME+'.log', 'w')
     tic = time()
-    # device = torch.device('cuda:0')
     no_optim = 0
     total_epoch = 300
     train_epoch_best_loss = 100.

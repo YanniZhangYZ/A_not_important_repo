@@ -1,21 +1,18 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable as V
-# from torch.optim import lr_scheduler
 
 import cv2
 import numpy as np
 
 
 class MyFrame():
-    # def __init__(self, net, loss, lr=2e-4, evalmode=False):
-    def __init__(self, net, loss, lr=2e-2, evalmode=False):
+    def __init__(self, net, loss, lr=2e-4, evalmode=False):
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
-        # self.net = net().cuda()
+
         self.net = net().to(self.device)
-        self.net = torch.nn.DataParallel(
-            self.net, device_ids=range(torch.cuda.device_count()))
+        # self.net = torch.nn.DataParallel(self.net, device_ids=range(torch.cuda.device_count()))
         self.optimizer = torch.optim.Adam(params=self.net.parameters(), lr=lr)
         #self.optimizer = torch.optim.RMSprop(params=self.net.parameters(), lr=lr)
 
@@ -31,13 +28,11 @@ class MyFrame():
         self.mask = mask_batch
         self.img_id = img_id
 
-    def test_one_img(self, img):  # 注释了一部分的
+    def test_one_img(self, img):
         pred = self.net.forward(img)
 
-        # pred[pred>0.5] = 1
-        # pred[pred<=0.5] = 0
-
-        # mask = pred.squeeze().cpu().data.numpy()
+        pred[pred > 0.5] = 1
+        pred[pred <= 0.5] = 0
         mask = pred.squeeze().cpu().data.numpy()
         return mask
 
@@ -97,9 +92,3 @@ class MyFrame():
         print(mylog, 'update learning rate: %f -> %f' % (self.old_lr, new_lr))
         print('update learning rate: %f -> %f' % (self.old_lr, new_lr))
         self.old_lr = new_lr
-
-    # def lr_strategy(self):  # 新加的
-    #     # scheduler = lr_scheduler.StepLR(self.optimizer, step_size=30, gamma=0.1)
-    #     # scheduler = lr_scheduler.MultiStepLR(self.optimizer, [30, 80], 0.1)
-    #     scheduler = lr_scheduler.ExponentialLR(self.optimizer, gamma=0.9)
-    #     return scheduler

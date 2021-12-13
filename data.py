@@ -25,7 +25,6 @@ def randomHueSaturationValue(image, hue_shift_limit=(-180, 180),
         val_shift = np.random.uniform(val_shift_limit[0], val_shift_limit[1])
         v = cv2.add(v, val_shift)
         image = cv2.merge((h, s, v))
-        # image = cv2.merge((s, v))
         image = cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
 
     return image
@@ -114,9 +113,9 @@ def default_loader(filename, image_root, gt_root, resize_shape):
                                    val_shift_limit=(-15, 15))
 
     img, mask = randomShiftScaleRotate(img, mask,
-                                       shift_limit=(-0.5, 0.5),
-                                       scale_limit=(-0.5, 0.5),
-                                       aspect_limit=(-0.5, 0.5),
+                                       shift_limit=(-0.1, 0.1),
+                                       scale_limit=(-0.1, 0.1),
+                                       aspect_limit=(-0.1, 0.1),
                                        rotate_limit=(-0, 0))
     img, mask = randomHorizontalFlip(img, mask)
     img, mask = randomVerticleFlip(img, mask)

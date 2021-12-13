@@ -174,11 +174,11 @@ if __name__ == '__main__':
     # img_names.append(folder+'.png')
     # img_names.append(os.listdir(test_file_path))
     # val = os.listdir(source)
-    solver = TTAFrame(DinkNet50)
+    solver = TTAFrame(DinkNet152)
     # solver = TTAFrame(LinkNet34)
-    solver.load('weights/dinknet50.th')
+    solver.load('weights/DinkNet152_8.th')
     tic = time()
-    target = 'submits/dink50/'
+    target = 'submits/DinkNet152_8/'
     os.mkdir(target)
     for i, name in enumerate(img_names):
         if i % 10 == 0:
