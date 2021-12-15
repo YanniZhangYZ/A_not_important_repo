@@ -121,7 +121,7 @@ if __name__ == '__main__':
                 solver.set_input(val_img, val_mask)
                 val_loss = solver.optimize(True)
                 validation_epoch_loss += val_loss
-            validation_epoch_loss /= len(val_img_list)
+            validation_epoch_loss /= len(val_data_loader_iter)
             mylog.write('--epoch:' + str(epoch) +
                         '  --validation_loss:' + str(validation_epoch_loss) + '\n')
             print('--epoch:', epoch,  '  --validation_loss:',
