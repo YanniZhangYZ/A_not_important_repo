@@ -24,8 +24,15 @@ from data import ImageFolder
 # import torch.nn.functional as F
 # from test import TTAFrame
 
-
+SEED = 0
 if __name__ == '__main__':
+
+    # fix seed
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)
+    np.random.seed(SEED)
+    random.seed(SEED)
+    torch.backends.cudnn.deterministic = True
 
     # the network need the size to be a multiple of 32, resize is intriduced
     ORIG_SHAPE = (400, 400)
