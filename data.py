@@ -97,27 +97,27 @@ def randomRotate90(image, mask, u=0.5):
     return image, mask
 
 
-def default_loader(filename, image_root, gt_root, resize_shape):
+def default_loader(filename, image_root, gt_root, resize_shape, do_preprocessing=True):
     img = cv2.imread(os.path.join(image_root, filename))
     mask = cv2.imread(os.path.join(gt_root, filename), cv2.IMREAD_GRAYSCALE)
 
     # the network need the size to be a multiple of 32, resize is intriduced
     img = cv2.resize(img, resize_shape)
     mask = cv2.resize(mask, resize_shape)
+    if do_preprocessing:
+        img = randomHueSaturationValue(img,
+                                       hue_shift_limit=(-30, 30),
+                                       sat_shift_limit=(-5, 5),
+                                       val_shift_limit=(-15, 15))
 
-    img = randomHueSaturationValue(img,
-                                   hue_shift_limit=(-30, 30),
-                                   sat_shift_limit=(-5, 5),
-                                   val_shift_limit=(-15, 15))
-
-    img, mask = randomShiftScaleRotate(img, mask,
-                                       shift_limit=(-0.1, 0.1),
-                                       scale_limit=(-0.1, 0.1),
-                                       aspect_limit=(-0.1, 0.1),
-                                       rotate_limit=(-0, 0))
-    img, mask = randomHorizontalFlip(img, mask)
-    img, mask = randomVerticleFlip(img, mask)
-    img, mask = randomRotate90(img, mask)
+        img, mask = randomShiftScaleRotate(img, mask,
+                                           shift_limit=(-0.1, 0.1),
+                                           scale_limit=(-0.1, 0.1),
+                                           aspect_limit=(-0.1, 0.1),
+                                           rotate_limit=(-0, 0))
+        img, mask = randomHorizontalFlip(img, mask)
+        img, mask = randomVerticleFlip(img, mask)
+        img, mask = randomRotate90(img, mask)
 
     mask = np.expand_dims(mask, axis=2)
     img = np.array(img, np.float32).transpose(2, 0, 1)/255.0 * 3.2 - 1.6

@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     #  data preprocessing here
     train_dataset = ImageFolder(image_list, image_root, gt_root, SHAPE)
-    val_dataset = ImageFolder(val_img_list, image_root, gt_root, SHAPE)
+    val_dataset = ImageFolder(val_img_list, image_root, gt_root, SHAPE, False)
     # print("train_dataset", train_dataset)
 
     data_loader = torch.utils.data.DataLoader(
