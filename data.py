@@ -130,17 +130,18 @@ def default_loader(filename, image_root, gt_root, resize_shape, do_preprocessing
 
 class ImageFolder(data.Dataset):
 
-    def __init__(self, trainlist, image_root, gt_root, resize_shape):
+    def __init__(self, trainlist, image_root, gt_root, resize_shape, do_preprocessing=True):
         self.ids = trainlist
         self.loader = default_loader
         self.image_root = image_root
         self.gt_root = gt_root
         self.resize_shape = resize_shape
+        self.do_preprocessing = do_preprocessing
 
     def __getitem__(self, index):
         filename = self.ids[index]
         img, mask = self.loader(filename, self.image_root,
-                                self.gt_root, self.resize_shape)
+                                self.gt_root, self.resize_shape, self.do_preprocessing)
         img = torch.Tensor(img)
         mask = torch.Tensor(mask)
         return img, mask
