@@ -24,6 +24,8 @@ from data import ImageFolder
 # import torch.nn.functional as F
 # from test import TTAFrame
 
+# 2 1.3003268480300902
+# 15 1.2859727501869203
 SEED = 0
 if __name__ == '__main__':
 
@@ -91,13 +93,16 @@ if __name__ == '__main__':
     mylog = open('logs/'+NAME+'.log', 'w')
     tic = time()
     no_optim = 0
+    no_optim_valid = 0
     total_epoch = 300
     train_epoch_best_loss = 100.
+    validation_epoch_best_loss = 100
 
     for epoch in range(1, total_epoch + 1):
         print('---------- Epoch:'+str(epoch) + ' ----------')
         data_loader_iter = iter(data_loader)
         train_epoch_loss = 0
+        validation_epoch_loss = 0
 
         print('Train:')
         for img, mask in data_loader_iter:
@@ -113,9 +118,9 @@ if __name__ == '__main__':
         print('--epoch:', epoch, '  --time:', duration_of_epoch, '  --train_loss:',
               train_epoch_loss)
 
-        if epoch % 5 == 0 and os.path.exists('weights/'+NAME+'.th'):
+        if epoch % 5 == 0:
             val_data_loader_iter = iter(val_data_loader)
-            validation_epoch_loss = 0
+
             print("Validation: ")
             for val_img, val_mask in val_data_loader_iter:
                 solver.set_input(val_img, val_mask)
@@ -126,13 +131,24 @@ if __name__ == '__main__':
                         '  --validation_loss:' + str(validation_epoch_loss) + '\n')
             print('--epoch:', epoch,  '  --validation_loss:',
                   validation_epoch_loss)
+            if validation_epoch_loss < validation_epoch_best_loss:
+                no_optim_valid = 0
+                validation_epoch_best_loss = validation_epoch_loss
+                solver.save('weights/'+NAME+'.th')
+            else:
+                no_optim_valid += 1
+                if no_optim_valid >= 3:
+                    mylog.write(
+                        'Validation loss not improving, early stop at' + str(epoch)+'epoch')
+                    print(
+                        'Validation loss not improving, early stop at %d epoch' % epoch)
+                    break
 
         if train_epoch_loss >= train_epoch_best_loss:
             no_optim += 1
         else:
             no_optim = 0
             train_epoch_best_loss = train_epoch_loss
-            solver.save('weights/'+NAME+'.th')
 
         if no_optim > 6:
             mylog.write('early stop at' + str(epoch)+'epoch')
