@@ -8,8 +8,6 @@ import numpy as np
 
 from time import time
 
-from networks.unet import Unet
-from networks.dunet import Dunet
 from networks.dinknet import LinkNet34, DinkNet34, DinkNet50, DinkNet101, DinkNet152, DinkNet34_less_pool
 from framework import MyFrame
 from loss import dice_bce_loss

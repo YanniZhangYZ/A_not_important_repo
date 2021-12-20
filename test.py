@@ -1,13 +1,9 @@
 import torch
-import torch.nn as nn
-import torch.utils.data as data
 from torch.autograd import Variable as V
 
 import cv2
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-import pickle
 
 from time import time
 
