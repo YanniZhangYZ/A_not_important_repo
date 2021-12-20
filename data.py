@@ -9,13 +9,12 @@ import os
 def randomHueSaturationValue(image, hue_shift_limit=(-180, 180),
                              sat_shift_limit=(-255, 255),
                              val_shift_limit=(-255, 255), u=0.5):
+    ''' Randomly adjust the hue and saturation of one image
+        within the interval given by paramters'''
     if np.random.random() < u:
         # print("HueSaturationValue")
         image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         h, s, v = cv2.split(image)
-        # hue_shift = np.random.randint(hue_shift_limit[0], hue_shift_limit[1]+1)
-        # hue_shift = np.uint8(hue_shift)
-        # h += hue_shift
         hue_shift = np.random.uniform(hue_shift_limit[0], hue_shift_limit[1])
         h = cv2.add(h, hue_shift)
         sat_shift = np.random.uniform(sat_shift_limit[0], sat_shift_limit[1])
@@ -34,6 +33,8 @@ def randomShiftScaleRotate(image, mask,
                            rotate_limit=(-0.0, 0.0),
                            aspect_limit=(-0.0, 0.0),
                            borderMode=cv2.BORDER_CONSTANT, u=0.5):
+    ''' Randomly shift, scale, and roate of one image
+        within the interval given by paramters'''
     if np.random.random() < u:
         # print("ShiftScaleRotate")
         height, width, channel = image.shape
@@ -71,6 +72,7 @@ def randomShiftScaleRotate(image, mask,
 
 
 def randomHorizontalFlip(image, mask, u=0.5):
+    ''' Randomly flip one image horizontally'''
     if np.random.random() < u:
         # print("HorizontalFlip")
         image = cv2.flip(image, 1)
@@ -80,6 +82,7 @@ def randomHorizontalFlip(image, mask, u=0.5):
 
 
 def randomVerticleFlip(image, mask, u=0.5):
+    ''' Randomly flip one image vertically'''
     if np.random.random() < u:
         # print("VerticleFlip")
         image = cv2.flip(image, 0)
@@ -98,23 +101,25 @@ def randomRotate90(image, mask, u=0.5):
 
 
 def default_loader(filename, image_root, gt_root, resize_shape, do_preprocessing=True):
+    '''This method can either do data preprocessing with  do_preprocessing=True
+        or just simply load images without preprocessing with  do_preprocessing=False'''
     img = cv2.imread(os.path.join(image_root, filename))
     mask = cv2.imread(os.path.join(gt_root, filename), cv2.IMREAD_GRAYSCALE)
 
-    # the network need the size to be a multiple of 32, resize is intriduced
+    # The network need the size to be a multiple of 32, resize is intriduced
     img = cv2.resize(img, resize_shape)
     mask = cv2.resize(mask, resize_shape)
     if do_preprocessing:
         img = randomHueSaturationValue(img,
-                                       hue_shift_limit=(-30, 30),
-                                       sat_shift_limit=(-5, 5),
-                                       val_shift_limit=(-15, 15))
+                                       hue_shift_limit=(-20, 20),
+                                       sat_shift_limit=(-10, 10),
+                                       val_shift_limit=(-10, 10))
 
         img, mask = randomShiftScaleRotate(img, mask,
                                            shift_limit=(-0.1, 0.1),
                                            scale_limit=(-0.1, 0.1),
                                            aspect_limit=(-0.1, 0.1),
-                                           rotate_limit=(-0, 0))
+                                           rotate_limit=(-180, 180))
         img, mask = randomHorizontalFlip(img, mask)
         img, mask = randomVerticleFlip(img, mask)
         img, mask = randomRotate90(img, mask)
@@ -124,7 +129,6 @@ def default_loader(filename, image_root, gt_root, resize_shape, do_preprocessing
     mask = np.array(mask, np.float32).transpose(2, 0, 1)/255.0
     mask[mask >= 0.5] = 1
     mask[mask <= 0.5] = 0
-    # mask = abs(mask-1)
     return img, mask
 
 

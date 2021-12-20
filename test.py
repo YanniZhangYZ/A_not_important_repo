@@ -16,9 +16,6 @@ from networks.dunet import Dunet
 from networks.dinknet import LinkNet34, DinkNet34, DinkNet50, DinkNet101, DinkNet152, DinkNet34_less_pool
 
 
-# BATCHSIZE_PER_CARD = 8
-
-
 class TTAFrame():
     def __init__(self, net):
         self.device = torch.device(
@@ -55,7 +52,6 @@ class TTAFrame():
         return mask3
 
     def load(self, path):
-        # self.net.load_state_dict(torch.load(path))
         if torch.cuda.is_available():
             self.net.load_state_dict(torch.load(path))
         else:
@@ -63,28 +59,26 @@ class TTAFrame():
                 path, map_location=self.device))
 
 
-if __name__ == '__main__':
-
-    #source = 'dataset/test/'
+def test():
     source_root = 'dataset/test_set_images'
     folder_names = sorted(os.listdir(source_root))
-    # paths = []
     img_names = [str(i)+'.png' for i in folder_names]
     solver = TTAFrame(DinkNet152)
-    solver.load('weights/DinkNet152_8_2e_4.th')
+    #  Load weights learned from training phase
+    solver.load('weights/DinkNet152.th')
     tic = time()
-    target = 'submits/DinkNet152_8_2e_4/'
+    #  The path that stores the resulting mask of test set
+    target = 'submits/DinkNet152/'
     os.mkdir(target)
     for i, name in enumerate(img_names):
         if (name == '.DS_Store'):
             continue
         if i % 10 == 0:
             print(i/10, '    ', '%.2f' % (time()-tic))
-        print(name)
+        print("Testing on ", name)
         path = os.path.join(source_root, folder_names[i], name)
         mask = solver.test_one_img_from_path(path)
         # Here we use threshold = 0.5 for each image, for 8 images batch, it is 4.0(mean)
         mask[mask > 4.0] = 255
         mask[mask <= 4.0] = 0
-        # mask = np.concatenate([mask[:,:,None],mask[:,:,None],mask[:,:,None]],axis=2)
         cv2.imwrite(target+name[:-4]+'_mask.png', mask.astype(np.uint8))
