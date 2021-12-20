@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable as V
+from sklearn.metrics import f1_score
 
 import cv2
 import numpy as np
@@ -42,19 +43,44 @@ class MyFrame():
         if self.mask is not None:
             self.mask = V(self.mask.to(self.device), volatile=volatile)
 
+    # def optimize(self, eval=False):
+    #     self.forward()
+    #     if not eval:
+    #         self.optimizer.zero_grad()
+    #         self.net.train()
+    #     else:
+    #         self.net.eval()
+    #     pred = self.net.forward(self.img)
+    #     loss = self.loss(self.mask, pred)
+    #     if not eval:
+    #         loss.backward()
+    #         self.optimizer.step()
+    #     return loss.item()
     def optimize(self, eval=False):
         self.forward()
         if not eval:
             self.optimizer.zero_grad()
             self.net.train()
-        else:
-            self.net.eval()
-        pred = self.net.forward(self.img)
-        loss = self.loss(self.mask, pred)
-        if not eval:
+            pred = self.net.forward(self.img)
+            loss = self.loss(self.mask, pred)
             loss.backward()
             self.optimizer.step()
-        return loss.item()
+        else:
+            self.net.eval()
+            pred = self.net.forward(self.img)
+            loss = self.loss(self.mask, pred)
+        pred_made = torch.clone(pred)
+        pred_made[pred_made > 0.5] = 1
+        pred_made[pred_made <= 0.5] = 0
+        F1 = self.compute_F1(self.mask, pred_made)
+
+        return F1, loss.item()
+
+    def compute_F1(self, gt, pred):
+        """extract label list"""
+        f1 = f1_score(torch.ravel(gt).cpu().detach().numpy(),
+                      torch.ravel(pred).cpu().detach().numpy(), zero_division=0)
+        return f1
 
     def save(self, path):
         torch.save(self.net.state_dict(), path)

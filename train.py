@@ -13,17 +13,17 @@ from framework import MyFrame
 from loss import dice_bce_loss
 from data import ImageFolder
 
-# SEED = 0
+SEED = 2
 
 
-def train():
+if __name__ == "__main__":
 
     # fix seed
-    # torch.manual_seed(SEED)
-    # torch.cuda.manual_seed_all(SEED)
-    # np.random.seed(SEED)
-    # random.seed(SEED)
-    # torch.backends.cudnn.deterministic = True
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)
+    np.random.seed(SEED)
+    random.seed(SEED)
+    torch.backends.cudnn.deterministic = True
 
     # The network need the size to be a multiple of 32, resize is intriduced
     ORIG_SHAPE = (400, 400)
@@ -91,22 +91,26 @@ def train():
         data_loader_iter = iter(data_loader)
         train_epoch_loss = 0
         validation_epoch_loss = 0
+        train_epoch_f1 = 0
+        val_epoch_f1 = 0
 
         print('Train:')
         for img, mask in data_loader_iter:
             solver.set_input(img, mask)
-            train_loss = solver.optimize()
+            train_F1, train_loss = solver.optimize()
             train_epoch_loss += train_loss
+            train_epoch_f1 += train_F1
         train_epoch_loss /= len(data_loader_iter)
+        train_epoch_f1 /= len(data_loader_iter)
 
         # Writing log
         duration_of_epoch = int(time()-tic)
         mylog.write('********************' + '\n')
         mylog.write('--epoch:' + str(epoch) + '  --time:' + str(duration_of_epoch) + '  --train_loss:' + str(
-            train_epoch_loss) + '\n')
+            train_epoch_loss) + '--train f1:' + str(train_epoch_f1)+'\n')
         # Print training loss
         print('--epoch:', epoch, '  --time:', duration_of_epoch, '  --train_loss:',
-              train_epoch_loss)
+              train_epoch_loss, '--train f1:', str(train_epoch_f1))
 
         #  Do validation every 5 epochs
         if epoch % 5 == 0:
@@ -115,15 +119,17 @@ def train():
             print("Validation: ")
             for val_img, val_mask in val_data_loader_iter:
                 solver.set_input(val_img, val_mask)
-                val_loss = solver.optimize(True)
+                val_F1, val_loss = solver.optimize(True)
                 validation_epoch_loss += val_loss
+                val_epoch_f1 += val_F1
             validation_epoch_loss /= len(val_data_loader_iter)
+            val_epoch_f1 /= len(val_data_loader_iter)
             # Writing log
             mylog.write('--epoch:' + str(epoch) +
-                        '  --validation_loss:' + str(validation_epoch_loss) + '\n')
+                        '  --validation_loss:' + str(validation_epoch_loss) + '--val f1:' + str(val_epoch_f1)+'\n')
             # Print validation loss
             print('--epoch:', epoch,  '  --validation_loss:',
-                  validation_epoch_loss)
+                  validation_epoch_loss, '--val f1:', str(val_epoch_f1))
 
             if validation_epoch_loss < validation_epoch_best_loss:
                 no_optim_valid = 0
