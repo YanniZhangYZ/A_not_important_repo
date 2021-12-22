@@ -78,6 +78,9 @@ def train():
         shuffle=True,
         num_workers=0)
 
+    if not os.path.exists('logs/'):
+        os.mkdir('logs/')
+
     mylog = open('logs/'+NAME+'.log', 'w')
     tic = time()
     no_optim = 0
