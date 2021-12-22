@@ -12,7 +12,6 @@ This project focuses on an image binary semantic segmentation problem, which ext
 │       ├── groundtruth
 │       └── images
 │
-├── logs
 ├── networks
 │   ├── __init__.py
 │   └── dinknet.py
@@ -31,7 +30,6 @@ This project focuses on an image binary semantic segmentation problem, which ext
 └── train.py
 ```
 - `README.md`: that is this file.
-- `logs`: the folder where log of every training will be stored
 - `/networks/dinknet.py` :  contains all the neural network models the program uses. Here we define the LinkNet and DinkNet for training and comparison.
 - `submits`: the folder where the testing prediction will be stored. We also uplaod the prediction images that gain use the best score on AIcorwd in the folder `DinkNet152_0.957 on AICrowd`.
 - `weights`: The folder where the optimal weight(.th file) generated during the training phase will be stored. When doing the test, the .th file in this folder will also be used. Given that the size of the .th file that reach our best result on AIcrowd is so large(more than 1G) that it exceeds github's file size limitation, we decide not to upload this file. Please feel free to contact me at yanni.zhang@epfl.ch if you need it.
