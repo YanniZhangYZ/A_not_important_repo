@@ -11,7 +11,7 @@ from time import time
 from networks.dinknet import LinkNet34, DinkNet34, DinkNet50, DinkNet101, DinkNet152, DinkNet34_less_pool
 from framework import MyFrame
 from loss import dice_bce_loss
-from data import ImageFolder
+from data_preprocessing import ImageFolder
 
 # SEED = 0
 
